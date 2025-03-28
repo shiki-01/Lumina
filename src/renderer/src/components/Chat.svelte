@@ -30,23 +30,23 @@
     if (!inputText || loading) return
     loading = true
 
-    await window.api.listeners.stream.onResponse((chunks) => {
+    const stream = await window.api.listeners.stream.onResponse((chunks) => {
       const chunk = chunks[0] as {
         data: {
           message: {
             content: string
           }
         }
-        chatId: string
+        messageId: string
       }
-      console.log('Received stream response:', chunk)
-      if (chunk && 'data' in chunk && 'chatId' in chunk) {
-        const { data, chatId } = chunk
-        if (chatId === params.id) {
-          messages[chatId] = messages[chatId] || { user: '', assistant: '' }
-          messages[chatId].assistant += data.message.content || ''
-          messages[chatId].user = inputText || ''
-          console.log('Updated messages:', messages)
+      if (chunk && 'data' in chunk && 'messageId' in chunk) {
+        const { data, messageId } = chunk
+        if (!messages[messageId]) {
+          messages[messageId] = { user: inputText || '', assistant: '' }
+        }
+        if (data && 'message' in data) {
+          const { content } = data.message
+          messages[messageId].assistant += content
         }
       } else if ('error' in chunk) {
         console.error('Error:')
@@ -56,13 +56,18 @@
     })
 
     try {
-      const response = await window.api.invoke.ollama.generate(params.id, inputText)
-      console.log(response)
+      await window.api.invoke.ollama.generate(params.id, inputText)
+      if (stream && stream.data) {
+        stream.data()
+      }
     } catch (error) {
       console.error('生成エラー:', error)
     } finally {
-      inputText = ''
       loading = false
+      if (textArea) {
+        textArea.value = ''
+        inputText = ''
+      }
     }
   }
 

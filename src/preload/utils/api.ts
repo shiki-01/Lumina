@@ -130,6 +130,8 @@ const apiHandlers = {
           )
         })
 
+        const messageId = uuid()
+
         const ollama = new Ollama()
 
         const mainWindow = BrowserWindow.getAllWindows()[0]
@@ -137,28 +139,31 @@ const apiHandlers = {
           return logStatus({ code: 500, message: 'メインウィンドウが見つかりませんでした' })
         }
 
-        if (process.env.NODE_ENV !== 'development') {
+        if (process.env.NODE_ENV === 'development') {
           const mockResponse = {
-            model: 'gemma3:1b',
-            created_at: new Date().toISOString(),
-            message: {
-              role: 'assistant',
-              content:
-                'Hi there! How’s your day going? 😊 \n' +
-                '\n' +
-                'Is there anything you’d like to chat about or any questions you have for me?' +
-                '\n' +
-                '\n' +
-                'but this is a Dev mode message'
+            data: {
+              model: 'gemma3:1b',
+              created_at: new Date().toISOString(),
+              message: {
+                role: 'assistant',
+                content:
+                  'Hi there! How’s your day going? 😊 \n' +
+                  '\n' +
+                  'Is there anything you’d like to chat about or any questions you have for me?' +
+                  '\n' +
+                  '\n' +
+                  'but this is a Dev mode message'
+              },
+              done_reason: 'stop',
+              done: true,
+              total_duration: 1921437841,
+              load_duration: 910654515,
+              prompt_eval_count: 11,
+              prompt_eval_duration: 125232593,
+              eval_count: 32,
+              eval_duration: 884908974
             },
-            done_reason: 'stop',
-            done: true,
-            total_duration: 1921437841,
-            load_duration: 910654515,
-            prompt_eval_count: 11,
-            prompt_eval_duration: 125232593,
-            eval_count: 32,
-            eval_duration: 884908974
+            messageId
           }
 
           mainWindow.webContents.send('stream:response', mockResponse)
@@ -170,13 +175,11 @@ const apiHandlers = {
           })
 
           for await (const chunk of response) {
-            console.log(chunk)
             const serializableChunk = {
               data: JSON.parse(JSON.stringify(chunk)) as ChatResponse,
-              chatId: chatId
+              messageId
             }
             mainWindow.webContents.send('stream:response', serializableChunk)
-            console.log('stream:response emitted')
             if (chunk.done) {
               break
             }
@@ -249,13 +252,10 @@ const apiListeners = {
       const safeCallback = (_: Electron.IpcRendererEvent, ...args: T): void => {
         callback(args)
       }
-      console.log('stream:response listener registered')
       ipcRenderer.on('stream:response', safeCallback)
-      console.log('stream:response listener registered')
       return new Promise((resolve) => {
         const removeListener = (): void => {
           ipcRenderer.removeListener('stream:response', safeCallback)
-          console.log('stream:response listener removed')
         }
         return resolve(
           logStatus(
@@ -272,11 +272,8 @@ const registerAPIListeners = <T>(apiObj: APIRecord<T>, parentKey = ''): void => 
   console.log(`[IPC] Registering listeners for path: ${parentKey}`)
   for (const key in apiObj) {
     const fullKey = parentKey ? `${parentKey}.${key}` : key
-    console.log(`[IPC] Processing key: ${fullKey}`)
     if (typeof apiObj[key] === 'function') {
-      console.log(`[IPC] Binding listener: on-api:${fullKey}`)
       ipcMain.on(`on-api:${fullKey}`, (_event, ...args) => {
-        console.log(`[IPC] Received event: ${fullKey}`, args)
         try {
           ;(apiObj[key] as (...args: unknown[]) => Promise<T>)(...args)
         } catch (err) {
