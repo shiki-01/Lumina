@@ -21,7 +21,9 @@
     "build:win": "npm run build && electron-builder --win",
     "build:mac": "npm run build && electron-builder --mac",
     "build:linux": "npm run build && electron-builder --linux",
-    "build:all": "npm run build && electron-builder -mwl"
+    "build:all": "npm run build && electron-builder -mwl",
+    "release": "electron-builder build --config electron-builder-config.cjs --publish always",
+		"beta": "electron-builder build --config electron-builder-config.cjs --publish always"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",
@@ -35,6 +37,7 @@
     "@master/css-server": "^2.0.0-rc.61",
     "@master/css.svelte": "^2.0.0-rc.61",
     "@swc/core": "^1.11.13",
+    "app-builder-bin": "^4.2.0",
     "dompurify": "^3.2.4",
     "electron-store": "^10.0.1",
     "electron-updater": "^6.6.2",

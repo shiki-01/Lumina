@@ -13,7 +13,7 @@
     "verbatimModuleSyntax": true,
     "useDefineForClassFields": true,
     "resolveJsonModule": true,
-    "strict": false,
+    "strict": true,
     "allowJs": true,
     "checkJs": true,
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
