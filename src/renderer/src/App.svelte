@@ -128,7 +128,7 @@
             data-isOverflow={isOverflow}
             class="scroll width:100% height:100% flex flex:column overflow-y:auto gap:16px"
           >
-            {#each chats as chat}
+            {#each chats as chat, index (index)}
               <Link to="/chat/{chat.id}">
                 <button
                   oncontextmenu={(e): void => ListContextMenu(e, chat.id)}

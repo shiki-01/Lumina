@@ -144,7 +144,7 @@
     class="scroll width:100% max-height:100% overflow-y:auto display:flex flex-direction:column gap:24px padding-x:240px padding-y:64px"
   >
     {#if messages}
-      {#each Object.entries(messages) as [_, message]}
+      {#each Object.entries(messages) as [index, message] (index)}
         <div class="width:100% display:flex flex-direction:column gap:12px padding-bottom:120px">
           <div class="width:100% display:flex gap:12px">
             {message.user}
@@ -184,11 +184,11 @@
         onclick={send}
       >
         <div class="width:100% height:100% display:flex position:relative">
-          {#each Array(gradients) as _, i}
+          {#each Array(gradients) as _, index (index)}
             <div
-              bind:this={elements[i]}
+              bind:this={elements[index]}
               class="element width:36px height:36px position:absolute top:0 left:0 z:0 border-radius:50%"
-              style={`--element-x-${i}: ${random()}; --element-y-${i}: ${random()}; transform:translate(var(--element-x-${i}), var(--element-y-${i}));`}
+              style={`--element-x-${index}: ${random()}; --element-y-${index}: ${random()}; transform:translate(var(--element-x-${index}), var(--element-y-${index}));`}
             ></div>
           {/each}
           <div

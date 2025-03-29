@@ -25,9 +25,7 @@ if (process.contextIsolated) {
     )
   }
 } else {
-  // @ts-ignore (define in dts)
   window.electron = electronAPI
-  // @ts-ignore (define in dts)
   window.api = {
     invoke: createAPIInvoker(apiHandlers) as unknown as APIHandler,
     listeners: apiListeners as APIListeners

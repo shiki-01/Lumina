@@ -8,7 +8,7 @@
 
 ## テキスト装飾
 
-**太字**、*斜体*、~~取り消し線~~、<u>下線</u>
+**太字**、_斜体_、~~取り消し線~~、<u>下線</u>
 
 ## リスト
 
@@ -28,9 +28,10 @@
 | D   | E   | F   |
 
 ## コードブロック
+
 ```javascript
-const hello = 'Hello, World!';
-console.log(hello);
+const hello = 'Hello, World!'
+console.log(hello)
 ```
 
 インラインコード: `print("Hello")`
