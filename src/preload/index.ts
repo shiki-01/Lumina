@@ -6,8 +6,8 @@ import {
   apiListeners,
   type APIHandler,
   type APIListeners
-} from './utils/api'
-import { logStatus } from './utils/logStatus'
+} from './utils/api.js'
+import { logStatus } from './utils/logStatus.js'
 
 if (process.contextIsolated) {
   try {

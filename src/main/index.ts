@@ -7,7 +7,7 @@ import {
   registerAPIHandlers,
   apiListeners,
   registerAPIListeners
-} from '../preload/utils/api'
+} from '../preload/utils/api.js'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({

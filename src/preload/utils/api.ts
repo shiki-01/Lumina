@@ -1,9 +1,9 @@
 import { BrowserWindow, ipcMain, ipcRenderer } from 'electron'
 import { AbortableAsyncIterator, ChatResponse, Ollama } from 'ollama'
-import { APIRecord, APISchema, RecursiveAPI } from '../types'
-import { ChatTable, MessageTable } from '../../global'
-import { DatabaseManager } from './database'
-import { logStatus } from './logStatus'
+import { APIRecord, APISchema, RecursiveAPI } from '../types/index.js'
+import { ChatTable, MessageTable } from '../../global.js'
+import { DatabaseManager } from './database.js'
+import { logStatus } from './logStatus.js'
 import { v4 as uuid } from 'uuid'
 import mock from '../assets/mock.md?raw'
 

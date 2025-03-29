@@ -6,7 +6,7 @@
   import '../assets/scroll.css'
   import '../assets/markdown.scss'
   import { navigate } from 'svelte-routing'
-  import type { MessageTable } from '../../../global'
+  import type { MessageTable } from '../../../global.js'
   import type { ChatResponse } from 'ollama'
 
   const gradients = 3

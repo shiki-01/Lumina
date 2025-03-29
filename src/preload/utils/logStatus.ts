@@ -1,4 +1,4 @@
-import type { Status, APISchema } from '../types'
+import type { Status, APISchema } from '../types/index.js'
 
 const statusSchema: { [key: string]: { [key: number]: { message: string } } } = {
   SUCCESS: {

@@ -2,7 +2,7 @@
   import { onMount } from 'svelte'
   import { CSSRuntimeProvider } from '@master/css.svelte'
   import { Router, Route, Link, navigate } from 'svelte-routing'
-  import type { ChatTable } from '../../global'
+  import type { ChatTable } from '../../global.js'
   import Icon from '@iconify/svelte'
   import Chat from './components/Chat.svelte'
   import config from './master.css'

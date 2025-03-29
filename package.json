@@ -6,6 +6,7 @@
   "main": "./out/main/index.js",
   "author": "shiki-01.com",
   "homepage": "https://github.com/shiki-01/Lumina",
+  "type": "module",
   "scripts": {
     "format": "prettier --plugin prettier-plugin-svelte --write .",
     "lint": "eslint --cache .",
@@ -19,7 +20,8 @@
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win",
     "build:mac": "npm run build && electron-builder --mac",
-    "build:linux": "npm run build && electron-builder --linux"
+    "build:linux": "npm run build && electron-builder --linux",
+    "build:all": "npm run build && electron-builder -mwl"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",
@@ -32,6 +34,7 @@
     "@master/css-runtime": "^2.0.0-rc.1",
     "@master/css-server": "^2.0.0-rc.61",
     "@master/css.svelte": "^2.0.0-rc.61",
+    "@swc/core": "^1.11.13",
     "dompurify": "^3.2.4",
     "electron-store": "^10.0.1",
     "electron-updater": "^6.6.2",
@@ -49,6 +52,7 @@
     "@sveltejs/vite-plugin-svelte": "^5.0.3",
     "@types/node": "^22.13.14",
     "depcheck": "^1.4.7",
+    "dmg-license": "^1.0.11",
     "electron": "^35.1.2",
     "electron-builder": "^26.0.12",
     "electron-vite": "^3.1.0",
