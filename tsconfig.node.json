@@ -6,9 +6,16 @@
     "src/preload/**/*",
     "src/renderer/**/*",
     "src/**/*.(d.ts|ts|js)",
+    "src/global.ts",
+    "src/renderer/renderer.d.ts",
   ],
   "compilerOptions": {
+    "strict": true,
+    "skipLibCheck": false,
     "composite": true,
-    "types": ["electron-vite/node"]
+    "typeRoots": [
+      "./node_modules/@types",
+      "./src/types/global",
+    ],
   }
 }

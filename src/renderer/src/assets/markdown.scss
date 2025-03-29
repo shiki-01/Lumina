@@ -1,0 +1,187 @@
+.markdown {
+    user-select: text;
+
+    ::selection {
+        background-color: #06c8ef98;
+        color: #000;
+    }
+
+    /* 見出し */
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        margin-top: 1rem;
+        margin-bottom: 0.5em;
+        font-weight: bold;
+    }
+
+    h1 {
+        font-size: 2em;
+    }
+
+    h2 {
+        font-size: 1.5em;
+    }
+
+    h3 {
+        font-size: 1.2em;
+    }
+
+    /* 段落 */
+    p {
+        margin-bottom: 1em;
+    }
+
+    /* リンク */
+    a {
+        color: #0066cc;
+        text-decoration: none;
+    }
+
+    a:hover {
+        text-decoration: underline;
+    }
+
+    /* リスト */
+    ul,
+    ol {
+        margin-bottom: 1em;
+        padding-left: 1.5em;
+
+        li {
+            ul {
+                margin-left: 0;
+            }
+        }
+    }
+
+    ul {
+        list-style-type: disc;
+    }
+
+    code {
+        font-family: "Source Code Pro Variable", monospace;
+        font-size: 0.9em;
+        background-color: #f4f4f4;
+        padding: 2px 4px;
+        border-radius: 3px;
+        letter-spacing: -0.02rem;
+        display: inline-block;
+        white-space: pre-wrap;
+        word-break: break-word;
+        border: 1px solid #ddd;
+    }
+
+    /* コードブロック */
+    pre {
+        background-color: #f4f4f4;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 1em;
+        overflow-x: auto;
+        margin: 1em 0;
+        font-family: "Source Code Pro Variable", monospace;
+        white-space: pre-wrap;
+        word-break: break-word;
+        tab-size: 4;
+        line-height: 1.5;
+        max-width: 100%;
+        overflow-x: auto;
+        position: relative;
+        display: flex;
+
+        .language {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            font-size: 0.8em;
+            color: #666;
+            margin-right: 1em;
+            padding: 0.2em 0.5em;
+            background-color: #ddd;
+            border-radius: 3px;
+        }
+
+        .clipboard {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            --svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M4 7H2v14c0 1.1.9 2 2 2h14v-2H4M20 3h-3.2c-.4-1.2-1.5-2-2.8-2s-2.4.8-2.8 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2m-6 0c.6 0 1 .5 1 1s-.5 1-1 1s-1-.5-1-1s.4-1 1-1'/%3E%3C/svg%3E");
+            background-color: #666;
+            -webkit-mask-image: var(--svg);
+            mask-image: var(--svg);
+            -webkit-mask-repeat: no-repeat;
+            mask-repeat: no-repeat;
+            -webkit-mask-size: 100% 100%;
+            mask-size: 100% 100%;
+
+            &:hover {
+                cursor: pointer;
+                background-color: #444;
+            }
+
+            &[data-clipboard-success="true"] {
+                --svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M4 7H2v14c0 1.1.9 2 2 2h14v-2H4M20 3h-3.2c-.4-1.2-1.5-2-2.8-2s-2.4.8-2.8 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2m-6 0c.6 0 1 .5 1 1s-.5 1-1 1s-1-.5-1-1s.4-1 1-1m-1.7 12.1L9 11.8l1.4-1.4l1.9 1.9L17.6 7L19 8.4'/%3E%3C/svg%3E");
+                background-color: #222;
+            }
+        }
+
+        code {
+            margin-top: calc(1rem + 1em);
+            font-size: 0.9em;
+            border: none;
+        }
+    }
+
+    /* 引用 */
+    blockquote {
+        border-left: 4px solid #ddd;
+        padding: 0.5em 0;
+        padding-left: 1em;
+        margin-left: 0;
+        font-style: italic;
+        color: #666;
+
+        p {
+            margin: 0;
+        }
+    }
+
+    /* 水平線 */
+    hr {
+        border: 0;
+        border-top: 2px solid #ddd;
+        margin: 2em 0;
+    }
+
+    /* テーブル */
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-bottom: 1em;
+    }
+
+    th,
+    td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+    }
+
+    th {
+        background-color: #f4f4f4;
+        font-weight: bold;
+    }
+
+    /* 画像 */
+    img {
+        max-width: 100%;
+        height: auto;
+    }
+}

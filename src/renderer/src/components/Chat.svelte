@@ -1,13 +1,18 @@
 <script lang="ts">
-  import { onDestroy, onMount } from 'svelte'
+  import { onDestroy, onMount, tick } from 'svelte'
+  import Lumina from './Lumina.svelte'
   import Icon from '@iconify/svelte'
   import SvelteMarkdown from 'svelte-markdown'
   import '../assets/scroll.css'
+  import '../assets/markdown.scss'
+  import { navigate } from 'svelte-routing'
+  import type { MessageTable } from '../../../global'
+  import type { ChatResponse } from 'ollama'
 
   const gradients = 3
 
   let params: { id: string } = $props()
-  let messages: Record<string, { user: string; assistant: string }> = $state({})
+  let messages: Record<string, MessageTable> = $state({})
   let loading = $state(false)
   let textArea: HTMLTextAreaElement | null = $state(null)
   let areaHeight = $state(0)
@@ -25,6 +30,28 @@
     })
   }
 
+  const applyClipboard = (): void => {
+    const markdown = window.document.querySelector('.markdown')
+    if (markdown) {
+      const pres = markdown.querySelectorAll('pre')
+      pres.forEach((pre) => {
+        const clipboard = pre.querySelector('.clipboard')
+        if (clipboard) {
+          clipboard.addEventListener('click', () => {
+            const code = pre.querySelector('code')
+            if (code) {
+              navigator.clipboard.writeText(code.innerText)
+              ;(clipboard as HTMLElement).dataset.clipboardSuccess = 'true'
+              setTimeout(() => {
+                ;(clipboard as HTMLElement).dataset.clipboardSuccess = 'false'
+              }, 2000)
+            }
+          })
+        }
+      })
+    }
+  }
+
   const send = async (): Promise<void> => {
     let inputText = textArea?.value
     if (!inputText || loading) return
@@ -32,21 +59,30 @@
 
     const stream = await window.api.listeners.stream.onResponse((chunks) => {
       const chunk = chunks[0] as {
-        data: {
-          message: {
-            content: string
-          }
-        }
+        data: ChatResponse
         messageId: string
+        chatId: string
       }
       if (chunk && 'data' in chunk && 'messageId' in chunk) {
-        const { data, messageId } = chunk
+        const { data, messageId, chatId } = chunk
         if (!messages[messageId]) {
-          messages[messageId] = { user: inputText || '', assistant: '' }
+          messages[messageId] = {
+            id: messageId,
+            chat_id: params.id,
+            user: inputText || '',
+            assistant: '',
+            created_at: new Date().toISOString()
+          }
         }
         if (data && 'message' in data) {
           const { content } = data.message
           messages[messageId].assistant += content
+
+          applyClipboard()
+
+          if (params.id === 'tmp' && chatId) {
+            navigate(`/chat/${chatId}`)
+          }
         }
       } else if ('error' in chunk) {
         console.error('Error:')
@@ -77,10 +113,25 @@
     }
   }
 
-  onMount(() => {
-    console.log(params.id)
+  onMount(async () => {
     interval = setInterval(update, 500)
     calcAreaHeight()
+
+    if (typeof window !== 'undefined' && params.id !== 'tmp') {
+      const { data } = await window.api.invoke.messages.getHistory(params.id)
+      if (data) {
+        messages = data.reduce(
+          (acc, message) => {
+            acc[message.id] = message
+            return acc
+          },
+          {} as Record<string, MessageTable>
+        )
+
+        await tick()
+        applyClipboard()
+      }
+    }
   })
 
   onDestroy(() => {
@@ -90,28 +141,18 @@
 
 <div class="width:100% height:100%">
   <div
-    class="scroll width:100% max-height:100% overflow-y:auto display:flex flex-direction:column gap:24px padding-x:24px padding-y:64px"
+    class="scroll width:100% max-height:100% overflow-y:auto display:flex flex-direction:column gap:24px padding-x:240px padding-y:64px"
   >
     {#if messages}
       {#each Object.entries(messages) as [_, message]}
-        <div class="width:100% display:flex flex-direction:column gap:12px">
-          <div
-            class="width:100% display:flex gap:12px"
-            style="justify-content:{message.user ? 'flex-end' : 'flex-start'}"
-          >
-            <div
-              class="width:calc(100%-48px) padding:12px border-radius:12px background-color:#f0f0f0"
-            >
-              {message.user}
-            </div>
+        <div class="width:100% display:flex flex-direction:column gap:12px padding-bottom:120px">
+          <div class="width:100% display:flex gap:12px">
+            {message.user}
           </div>
-          <div
-            class="width:100% display:flex gap:12px"
-            style="justify-content:{message.user ? 'flex-start' : 'flex-end'}"
-          >
-            <div
-              class="width:calc(100%-48px) padding:12px border-radius:12px background-color:#f0f0f0"
-            >
+          <span class="width:100% height:2px background:#eee"></span>
+          <div class="width:100% display:flex gap:12px">
+            <Lumina />
+            <div class="markdown width:100% display:flex flex-direction:column">
               <SvelteMarkdown source={message.assistant} />
             </div>
           </div>

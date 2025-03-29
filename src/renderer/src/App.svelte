@@ -2,36 +2,86 @@
   import { onMount } from 'svelte'
   import { CSSRuntimeProvider } from '@master/css.svelte'
   import { Router, Route, Link, navigate } from 'svelte-routing'
+  import type { ChatTable } from '../../global'
   import Icon from '@iconify/svelte'
   import Chat from './components/Chat.svelte'
   import config from './master.css'
-  import mocks from './assets/mock.json'
   import '@fontsource-variable/noto-sans-jp'
   import '@fontsource-variable/roboto'
+  import '@fontsource-variable/source-code-pro'
   import './assets/scroll.css'
+  import ContextMenu from './components/ContextMenu.svelte'
 
   let root: Document | ShadowRoot | null = $state(null)
   let isOverflow = $state(false)
+  let contextMenu: { title: string; icon: string; action: () => void }[] = $state([])
+  let contextPosition = $state({ x: 0, y: 0 })
+  let isContextMenuOpen = $state(false)
+  let chats: ChatTable[] = $state([])
 
   const styleVariable = {
     mainPadding: 24,
     headerHeight: 48
   }
 
-  const newChat = async (): Promise<void> => {
+  const updateChatList = async (): Promise<void> => {
     if (typeof window !== 'undefined') {
-      const { data } = await window.api.invoke.chats.create('')
-      console.log(data)
-      if (data && data.id) {
-        navigate(`/chat/${data.id}`)
+      const { data } = await window.api.invoke.chats.list()
+      if (data) {
+        chats = data
       }
     }
   }
 
+  const newChat = async (): Promise<void> => {
+    navigate(`/chat/tmp`)
+  }
+
+  const ListContextMenu = (event: MouseEvent, id: string): void => {
+    event.preventDefault()
+    event.stopPropagation()
+    isContextMenuOpen = true
+    contextPosition.x = event.clientX
+    contextPosition.y = event.clientY
+    contextMenu = [
+      {
+        title: 'New Chat',
+        icon: 'mdi:plus',
+        action: (): void => {
+          newChat()
+        }
+      },
+      {
+        title: 'Delete Chat',
+        icon: 'mdi:delete',
+        action: (): void => {
+          if (typeof window !== 'undefined') {
+            window.api.invoke.chats.delete(id)
+            chats = chats.filter((chat) => chat.id !== id)
+          }
+        }
+      },
+      {
+        title: 'Export Chat',
+        icon: 'mdi:export',
+        action: (): void => {
+          console.log('Export Chat')
+        }
+      },
+      {
+        title: 'Import Chat',
+        icon: 'mdi:import',
+        action: (): void => {
+          console.log('Import Chat')
+        }
+      }
+    ]
+  }
+
   $effect(() => {
-    if (typeof document !== 'undefined') {
-      const scrollHeight = document.documentElement.scrollHeight
-      const clientHeight = document.documentElement.clientHeight
+    if (typeof window !== 'undefined') {
+      const scrollHeight = window.document.documentElement.scrollHeight
+      const clientHeight = window.document.documentElement.clientHeight
       isOverflow = scrollHeight > clientHeight
     }
   })
@@ -39,6 +89,13 @@
   onMount(async () => {
     if (typeof window !== 'undefined') {
       root = document
+      await updateChatList()
+
+      await window.api.listeners.stream.onDatabaseChange((event) => {
+        if (event && event.name === 'chat') {
+          updateChatList()
+        }
+      })
     }
   })
 </script>
@@ -53,6 +110,14 @@
           <Chat id={params.id} />
         </Route>
         <Route path="/">
+          {#if isContextMenuOpen}
+            <button
+              class="position:absolute top:0 right:0 width:100% height:100%"
+              onclick={(): boolean => (isContextMenuOpen = false)}
+            >
+              <ContextMenu context={contextMenu} position={contextPosition} />
+            </button>
+          {/if}
           <button
             onclick={newChat}
             class="position:absolute bottom:0 right:0 margin:24px padding:12px border-radius:100px cursor:pointer fg:#fff bg:#000 shadow:0|2px|4px|rgba(0,0,0,0.2) shadow:0|4px|8px|rgba(0,0,0,0.2):hover ~box-shadow|ease-in ~duration:120ms"
@@ -63,17 +128,18 @@
             data-isOverflow={isOverflow}
             class="scroll width:100% height:100% flex flex:column overflow-y:auto gap:16px"
           >
-            {#each mocks as mock}
-              <Link to="/chat/{mock.id}">
-                <div
-                  class="margin:8px padding:16px border-radius:8px cursor:pointer shadow:0|2px|4px|rgba(0,0,0,0.2) shadow:0|4px|8px|rgba(0,0,0,0.2):hover ~box-shadow|ease-in ~duration:120ms"
+            {#each chats as chat}
+              <Link to="/chat/{chat.id}">
+                <button
+                  oncontextmenu={(e): void => ListContextMenu(e, chat.id)}
+                  class="width:calc(100%-16px) margin:8px padding:16px display:flex flex-direction:column gap:8px border-radius:8px cursor:pointer border:2px|solid|#06c8ef49 border:2px|solid|#06c8ef:hover ~border|ease-in ~duration:120ms"
                 >
-                  <h1 class="font-weight:400 font-size:1.5em">{mock.title}</h1>
-                  <div class="flex flex:row justify-content:space-between">
-                    <p>{mock.date}</p>
-                    <p>{mock.model}</p>
+                  <h1 class="font-weight:400 font-size:1.5em text:left">タイトル{chat.title}</h1>
+                  <div class="width:100% flex flex:row justify-content:space-between">
+                    <p>{chat.created_at}</p>
+                    <p>{chat.model}</p>
                   </div>
-                </div>
+                </button>
               </Link>
             {/each}
           </div>

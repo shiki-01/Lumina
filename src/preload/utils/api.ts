@@ -1,24 +1,26 @@
 import { BrowserWindow, ipcMain, ipcRenderer } from 'electron'
-import { ChatResponse, Ollama } from 'ollama'
+import { AbortableAsyncIterator, ChatResponse, Ollama } from 'ollama'
 import { APIRecord, APISchema, RecursiveAPI } from '../types'
+import { ChatTable, MessageTable } from '../../global'
 import { DatabaseManager } from './database'
 import { logStatus } from './logStatus'
 import { v4 as uuid } from 'uuid'
+import mock from '../assets/mock.md?raw'
 
 /**
  * API のハンドラ郡
  */
 const apiHandlers = {
   chats: {
-    list: async (): Promise<APISchema> => {
+    list: async (): Promise<APISchema<ChatTable[] | null>> => {
       try {
         const db = DatabaseManager.getDB()
-        const rows = await new Promise((resolve, reject) => {
+        const rows: ChatTable[] = await new Promise((resolve, reject) => {
           db.all(
             `SELECT id, title, model, 
              strftime('%Y-%m-%d %H:%M', created_at) as created_at 
              FROM chats ORDER BY created_at DESC`,
-            (err, rows) => (err ? reject(err) : resolve(rows))
+            (err, rows) => (err ? reject(err) : resolve(rows as ChatTable[]))
           )
         })
         if (!rows) {
@@ -27,11 +29,11 @@ const apiHandlers = {
           return logStatus({ code: 200, message: 'チャットの一覧を取得しました' }, rows)
         }
       } catch (error) {
-        return logStatus({ code: 500, message: 'チャットの一覧の取得に失敗しました' }, {}, error)
+        return logStatus({ code: 500, message: 'チャットの一覧の取得に失敗しました' }, null, error)
       }
     },
 
-    create: async (title: string): Promise<APISchema<{ id: string } | null>> => {
+    create: async (): Promise<APISchema<{ id: string } | null>> => {
       try {
         const db = DatabaseManager.getDB()
         let id: string
@@ -47,7 +49,7 @@ const apiHandlers = {
         } while (exists)
 
         await new Promise((resolve, reject) => {
-          db.run('INSERT INTO chats (id, title) VALUES (?, ?)', [id, title], function (err) {
+          db.run('INSERT INTO chats (id, title) VALUES (?, ?)', [id, 'New Chat'], function (err) {
             if (err) {
               reject(err)
             } else {
@@ -55,13 +57,23 @@ const apiHandlers = {
             }
           })
         })
+
+        const mainWindow = BrowserWindow.getAllWindows()[0]
+        if (!mainWindow) {
+          return logStatus({ code: 500, message: 'メインウィンドウが見つかりませんでした' })
+        }
+        mainWindow.webContents.send('database:change', {
+          name: 'chat',
+          type: 'insert'
+        })
+
         return logStatus({ code: 200, message: 'チャットを作成しました' }, { id })
       } catch (error) {
         return logStatus({ code: 500, message: 'チャットの作成に失敗しました' }, null, error)
       }
     },
 
-    delete: async (id: number): Promise<APISchema> => {
+    delete: async (id: string): Promise<APISchema> => {
       try {
         const db = DatabaseManager.getDB()
         await new Promise((resolve, reject) => {
@@ -77,12 +89,12 @@ const apiHandlers = {
   },
 
   messages: {
-    getHistory: async (chatId: number): Promise<APISchema> => {
+    getHistory: async (chatId: string): Promise<APISchema<MessageTable[] | null>> => {
       try {
         const db = DatabaseManager.getDB()
         const rows = await new Promise((resolve, reject) => {
           db.all(
-            `SELECT role, content, 
+            `SELECT id, chat_id, user, assistant, created_at, 
              strftime('%Y-%m-%d %H:%M', created_at) as created_at 
              FROM messages WHERE chat_id = ? ORDER BY created_at ASC`,
             [chatId],
@@ -92,24 +104,28 @@ const apiHandlers = {
         if (!rows) {
           return logStatus({ code: 404, message: 'メッセージの履歴が見つかりませんでした' })
         } else {
-          return logStatus({ code: 200, message: 'メッセージの履歴を取得しました' }, rows)
+          return logStatus(
+            { code: 200, message: 'メッセージの履歴を取得しました' },
+            rows as MessageTable[]
+          )
         }
       } catch (error) {
-        return logStatus({ code: 500, message: 'メッセージの履歴の取得に失敗しました' }, {}, error)
+        return logStatus(
+          { code: 500, message: 'メッセージの履歴の取得に失敗しました' },
+          null,
+          error
+        )
       }
     },
 
-    append: async (
-      chatId: string,
-      message: { role: 'user' | 'assistant' | 'system'; content: string }
-    ): Promise<APISchema> => {
+    append: async (content: MessageTable): Promise<APISchema> => {
       try {
         const db = DatabaseManager.getDB()
         const id = uuid()
         await new Promise((resolve, reject) => {
           db.run(
-            'INSERT INTO messages (id, chat_id, role, content) VALUES (?, ?, ?, ?)',
-            [id, chatId, message.role, message.content],
+            'INSERT INTO messages (id, chat_id, user, assistant) VALUES (?, ?, ?, ?)',
+            [id, content.chat_id, content.user, content.assistant],
             (err) => (err ? reject(err) : resolve(null))
           )
         })
@@ -123,6 +139,9 @@ const apiHandlers = {
   ollama: {
     generate: async (chatId: string, prompt: string): Promise<APISchema> => {
       try {
+        if (chatId === 'tmp') {
+          chatId = (await apiHandlers.chats.create()).data?.id as string
+        }
         const db = DatabaseManager.getDB()
         const chat = await new Promise((resolve, reject) => {
           db.get('SELECT model FROM chats WHERE id = ?', [chatId], (err, row) =>
@@ -131,59 +150,103 @@ const apiHandlers = {
         })
 
         const messageId = uuid()
-
         const ollama = new Ollama()
-
         const mainWindow = BrowserWindow.getAllWindows()[0]
         if (!mainWindow) {
           return logStatus({ code: 500, message: 'メインウィンドウが見つかりませんでした' })
         }
 
-        if (process.env.NODE_ENV === 'development') {
-          const mockResponse = {
-            data: {
-              model: 'gemma3:1b',
-              created_at: new Date().toISOString(),
-              message: {
-                role: 'assistant',
-                content:
-                  'Hi there! How’s your day going? 😊 \n' +
-                  '\n' +
-                  'Is there anything you’d like to chat about or any questions you have for me?' +
-                  '\n' +
-                  '\n' +
-                  'but this is a Dev mode message'
-              },
-              done_reason: 'stop',
-              done: true,
-              total_duration: 1921437841,
-              load_duration: 910654515,
-              prompt_eval_count: 11,
-              prompt_eval_duration: 125232593,
-              eval_count: 32,
-              eval_duration: 884908974
-            },
-            messageId
-          }
+        let response: ChatResponse | AbortableAsyncIterator<ChatResponse>
 
-          mainWindow.webContents.send('stream:response', mockResponse)
+        if (process.env.NODE_ENV === 'development') {
+          response = {
+            model: 'gemma3:1b',
+            created_at: new Date(),
+            message: {
+              role: 'assistant',
+              content: mock
+            },
+            done_reason: 'stop',
+            done: true,
+            total_duration: 1921437841,
+            load_duration: 910654515,
+            prompt_eval_count: 11,
+            prompt_eval_duration: 125232593,
+            eval_count: 32,
+            eval_duration: 884908974
+          }
         } else {
-          const response = await ollama.chat({
+          response = await ollama.chat({
             model: (chat as { model: string }).model,
             messages: [{ role: 'user', content: prompt }],
             stream: true
           })
+        }
 
+        const transformContent = (content: string): string => {
+          let start = false
+          return content
+            .split('\n')
+            .map((line, index, lines) => {
+              if (line.startsWith('```')) {
+                const language = line.slice(3).trim()
+                const pre = start
+                  ? '</code></pre>'
+                  : `<pre class="${language}"><div data-clipboard-success="false" class="clipboard"></div><div class="language">${language}</div>`
+                start = !start
+                if (start) {
+                  lines[index + 1] = `<code class="${language}">${lines[index + 1]}`
+                }
+                return pre
+              }
+              return line
+            })
+            .join('\n')
+        }
+
+        if ('abort' in response) {
           for await (const chunk of response) {
+            const transformedContent = transformContent(chunk.message.content)
             const serializableChunk = {
-              data: JSON.parse(JSON.stringify(chunk)) as ChatResponse,
-              messageId
+              data: JSON.parse(
+                JSON.stringify({
+                  ...chunk,
+                  message: { ...chunk.message, content: transformedContent }
+                })
+              ) as ChatResponse,
+              messageId,
+              chatId
             }
             mainWindow.webContents.send('stream:response', serializableChunk)
             if (chunk.done) {
+              apiHandlers.messages.append({
+                id: messageId,
+                chat_id: chatId,
+                user: prompt,
+                assistant: chunk.message.content,
+                created_at: chunk.created_at.toISOString()
+              })
               break
             }
           }
+        } else {
+          const transformedContent = transformContent(response.message.content)
+          const serializableChunk = {
+            data: {
+              ...response,
+              message: { ...response.message, content: transformedContent }
+            } as ChatResponse,
+            messageId,
+            chatId
+          }
+          apiHandlers.messages.append({
+            id: messageId,
+            chat_id: chatId,
+            user: prompt,
+            assistant: serializableChunk.data.message.content,
+            created_at: response.created_at.toISOString()
+          })
+          mainWindow.webContents.send('stream:response', serializableChunk)
         }
 
         return logStatus({ code: 200, message: 'Ollama による返答の生成に成功しました' })
@@ -260,6 +323,35 @@ const apiListeners = {
         return resolve(
           logStatus(
             { code: 200, message: 'stream:response リスナーを登録しました' },
+            removeListener
+          )
+        )
+      })
+    },
+    onDatabaseChange: (
+      callback: (args: {
+        name: 'message' | 'chat'
+        type: 'insert' | 'update' | 'delete'
+        data: unknown
+      }) => void
+    ): Promise<APISchema<() => void>> => {
+      const safeCallback = (_: Electron.IpcRendererEvent, ...args: unknown[]): void => {
+        callback(
+          args[0] as {
+            name: 'message' | 'chat'
+            type: 'insert' | 'update' | 'delete'
+            data: unknown
+          }
+        )
+      }
+      ipcRenderer.on('database:change', safeCallback)
+      return new Promise((resolve) => {
+        const removeListener = (): void => {
+          ipcRenderer.removeListener('database:change', safeCallback)
+        }
+        return resolve(
+          logStatus(
+            { code: 200, message: 'database:change リスナーを登録しました' },
             removeListener
           )
         )

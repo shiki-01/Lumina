@@ -1,7 +1,7 @@
 import { app, shell, BrowserWindow } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import icon from '../../resources/icon.png?asset'
+import icon from '../../resources/icon.png?raw'
 import {
   apiHandlers,
   registerAPIHandlers,
@@ -20,13 +20,20 @@ function createWindow(): void {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false
+      sandbox: false,
+      devTools: process.env['NODE_ENV'] === 'development'
     }
   })
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
   })
+
+  if (process.env['NODE_ENV'] === 'development') {
+    mainWindow.webContents.once('did-frame-finish-load', () => {
+      mainWindow.webContents.openDevTools({ mode: 'right' })
+    })
+  }
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url).then((r) => {

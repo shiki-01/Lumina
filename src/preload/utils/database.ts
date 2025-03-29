@@ -26,9 +26,9 @@ class DatabaseManager {
   
         CREATE TABLE IF NOT EXISTS messages (
           id TEXT PRIMARY KEY NOT NULL,
-          chat_id INTEGER REFERENCES chats(id) ON DELETE CASCADE,
-          role TEXT CHECK(role IN ('user', 'assistant', 'system')) NOT NULL,
-          content TEXT NOT NULL,
+          chat_id TEXT REFERENCES chats(id) ON DELETE CASCADE,
+          user TEXT NOT NULL,
+          assistant TEXT NOT NULL,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
       `)

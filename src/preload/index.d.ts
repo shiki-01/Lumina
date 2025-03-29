@@ -1,9 +1,17 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
-import type { API } from './utils/api'
+import type { APIHandler, APIListeners } from './utils/api'
 
 declare global {
   interface Window {
     electron: ElectronAPI
-    api: API
+    api: {
+      invoke: APIHandler
+      listeners: APIListeners
+    }
   }
+}
+
+declare module '.md' {
+  const content: string
+  export default content
 }

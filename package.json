@@ -25,12 +25,14 @@
     "@electron-toolkit/utils": "^4.0.0",
     "@fontsource-variable/noto-sans-jp": "^5.2.5",
     "@fontsource-variable/roboto": "^5.2.5",
+    "@fontsource-variable/source-code-pro": "^5.2.5",
     "@iconify/svelte": "^4.2.0",
     "@lmstudio/sdk": "^1.0.1",
     "@master/css": "^1.37.8",
     "@master/css-runtime": "^2.0.0-rc.1",
     "@master/css-server": "^2.0.0-rc.56",
     "@master/css.svelte": "^2.0.0-rc.56",
+    "dompurify": "^3.2.4",
     "electron-is-dev": "^3.0.1",
     "electron-store": "^10.0.1",
     "electron-updater": "^6.3.9",
@@ -59,6 +61,8 @@
     "svelte": "^5.20.1",
     "svelte-check": "^4.1.4",
     "typescript": "^5.7.3",
-    "vite": "^6.1.0"
+    "vite": "^6.1.0",
+    "vite-plugin-markdown": "^2.2.0",
+    "vite-plugin-md": "^0.21.5"
   }
 }
