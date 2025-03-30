@@ -1,18 +1,16 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { CSSRuntimeProvider } from '@master/css.svelte'
   import { Router, Route, Link, navigate } from 'svelte-routing'
   import type { ChatTable } from '../../global.js'
+  import { CSSRuntimeProvider } from '@master/css.svelte'
   import Icon from '@iconify/svelte'
   import Chat from './components/Chat.svelte'
-  import config from './master.css'
   import '@fontsource-variable/noto-sans-jp'
   import '@fontsource-variable/roboto'
   import '@fontsource-variable/source-code-pro'
   import './assets/scroll.css'
   import ContextMenu from './components/ContextMenu.svelte'
 
-  let root: Document | ShadowRoot | null = $state(null)
   let isOverflow = $state(false)
   let contextMenu: { title: string; icon: string; action: () => void }[] = $state([])
   let contextPosition = $state({ x: 0, y: 0 })
@@ -88,7 +86,6 @@
 
   onMount(async () => {
     if (typeof window !== 'undefined') {
-      root = document
       await updateChatList()
 
       await window.api.listeners.stream.onDatabaseChange((event) => {
@@ -100,7 +97,7 @@
   })
 </script>
 
-<CSSRuntimeProvider {config} {root}>
+<CSSRuntimeProvider config>
   <div class="width:100svw height:100svh overflow:hidden">
     <Router>
       <div
@@ -132,7 +129,7 @@
               <Link to="/chat/{chat.id}">
                 <button
                   oncontextmenu={(e): void => ListContextMenu(e, chat.id)}
-                  class="width:calc(100%-16px) margin:8px padding:16px display:flex flex-direction:column gap:8px border-radius:8px cursor:pointer border:2px|solid|#06c8ef49 border:2px|solid|#06c8ef:hover ~border|ease-in ~duration:120ms"
+                  class="w:calc(100%-16px) margin:8px padding:16px display:flex flex-direction:column gap:8px border-radius:8px cursor:pointer border:2px|solid|#06c8ef49 border:2px|solid|#06c8ef:hover ~border|ease-in ~duration:120ms"
                 >
                   <h1 class="font-weight:400 font-size:1.5em text:left">タイトル{chat.title}</h1>
                   <div class="width:100% flex flex:row justify-content:space-between">

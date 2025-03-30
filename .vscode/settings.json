@@ -20,6 +20,12 @@
     "noto",
     "nsis",
     "Ollama",
+    "shiki",
     "vite"
-  ]
+  ],
+  "editor.quickSuggestions": {
+    "other": "on",
+    "comments": "off",
+    "strings": "on"
+  }
 }

@@ -1,12 +1,7 @@
 import { contextBridge } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import {
-  createAPIInvoker,
-  apiHandlers,
-  apiListeners,
-  type APIHandler,
-  type APIListeners
-} from './utils/api.js'
+import { createAPIInvoker, apiHandlers, type APIHandler } from './utils/api/handler.js'
+import { apiListeners, type APIListeners } from './utils/api/listener.js'
 import { logStatus } from './utils/logStatus.js'
 
 if (process.contextIsolated) {

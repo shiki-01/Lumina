@@ -6,6 +6,20 @@ const statusSchema: { [key: string]: { [key: number]: { message: string } } } = 
       message: 'Success'
     }
   },
+  WARN: {
+    300: {
+      message: 'Warning'
+    },
+    301: {
+      message: 'Redirect'
+    },
+    302: {
+      message: 'Found'
+    },
+    304: {
+      message: 'Not Modified'
+    }
+  },
   ERROR: {
     400: {
       message: 'Bad Request'
@@ -59,6 +73,9 @@ const logStatus = <T extends object | unknown>(
       return { status, error: errorMessage }
     }
     return { status, error: logMessage }
+  } else if (statusType === 'WARN') {
+    console.warn(`[WARN] ${logMessage}`)
+    return { status, data: message }
   } else {
     console.error(`[ERROR] Invalid status code: ${status.code}`)
     return { status, error: 'Internal Server Error' }

@@ -1,11 +1,12 @@
-import { BrowserWindow, ipcMain, ipcRenderer } from 'electron'
+import { ipcMain, ipcRenderer } from 'electron'
 import { AbortableAsyncIterator, ChatResponse, Ollama } from 'ollama'
-import { APIRecord, APISchema, RecursiveAPI } from '../types/index.js'
-import { ChatTable, MessageTable } from '../../global.js'
-import { DatabaseManager } from './database.js'
-import { logStatus } from './logStatus.js'
+import { APIRecord, APISchema, RecursiveAPI } from '../../types/index.js'
+import { ChatTable, MessageTable } from '../../../global.js'
+import { logStatus } from '../logStatus.js'
 import { v4 as uuid } from 'uuid'
-import mock from '../assets/mock.md?raw'
+import mock from '../../assets/mock.md?raw'
+import { registerAPIListeners } from './listener.js'
+import { DatabaseManager } from '../../../main/utils/database.js'
 
 /**
  * API のハンドラ郡
@@ -58,11 +59,7 @@ const apiHandlers = {
           })
         })
 
-        const mainWindow = BrowserWindow.getAllWindows()[0]
-        if (!mainWindow) {
-          return logStatus({ code: 500, message: 'メインウィンドウが見つかりませんでした' })
-        }
-        mainWindow.webContents.send('database:change', {
+        ipcMain.emit('database:change', {
           name: 'chat',
           type: 'insert'
         })
@@ -151,10 +148,6 @@ const apiHandlers = {
 
         const messageId = uuid()
         const ollama = new Ollama()
-        const mainWindow = BrowserWindow.getAllWindows()[0]
-        if (!mainWindow) {
-          return logStatus({ code: 500, message: 'メインウィンドウが見つかりませんでした' })
-        }
 
         let response: ChatResponse | AbortableAsyncIterator<ChatResponse>
 
@@ -217,7 +210,7 @@ const apiHandlers = {
               messageId,
               chatId
             }
-            mainWindow.webContents.send('stream:response', serializableChunk)
+            ipcMain.emit('stream:response', serializableChunk)
             if (chunk.done) {
               apiHandlers.messages.append({
                 id: messageId,
@@ -246,7 +239,7 @@ const apiHandlers = {
             assistant: serializableChunk.data.message.content,
             created_at: response.created_at.toISOString()
           })
-          mainWindow.webContents.send('stream:response', serializableChunk)
+          ipcMain.emit('stream:response', serializableChunk)
         }
 
         return logStatus({ code: 200, message: 'Ollama による返答の生成に成功しました' })
@@ -307,110 +300,6 @@ const createAPIInvoker = <T>(apiObj: APIRecord<T>, parentKey = ''): RecursiveAPI
   return apiRenderer as RecursiveAPI<T>
 }
 
-const apiListeners = {
-  stream: {
-    onResponse: <T extends unknown[]>(
-      callback: (args: T) => void
-    ): Promise<APISchema<() => void>> => {
-      const safeCallback = (_: Electron.IpcRendererEvent, ...args: T): void => {
-        callback(args)
-      }
-      ipcRenderer.on('stream:response', safeCallback)
-      return new Promise((resolve) => {
-        const removeListener = (): void => {
-          ipcRenderer.removeListener('stream:response', safeCallback)
-        }
-        return resolve(
-          logStatus(
-            { code: 200, message: 'stream:response リスナーを登録しました' },
-            removeListener
-          )
-        )
-      })
-    },
-    onDatabaseChange: (
-      callback: (args: {
-        name: 'message' | 'chat'
-        type: 'insert' | 'update' | 'delete'
-        data: unknown
-      }) => void
-    ): Promise<APISchema<() => void>> => {
-      const safeCallback = (_: Electron.IpcRendererEvent, ...args: unknown[]): void => {
-        callback(
-          args[0] as {
-            name: 'message' | 'chat'
-            type: 'insert' | 'update' | 'delete'
-            data: unknown
-          }
-        )
-      }
-      ipcRenderer.on('database:change', safeCallback)
-      return new Promise((resolve) => {
-        const removeListener = (): void => {
-          ipcRenderer.removeListener('database:change', safeCallback)
-        }
-        return resolve(
-          logStatus(
-            { code: 200, message: 'database:change リスナーを登録しました' },
-            removeListener
-          )
-        )
-      })
-    }
-  }
-} satisfies APIRecord<APISchema>
-
-const registerAPIListeners = <T>(apiObj: APIRecord<T>, parentKey = ''): void => {
-  console.log(`[IPC] Registering listeners for path: ${parentKey}`)
-  for (const key in apiObj) {
-    const fullKey = parentKey ? `${parentKey}.${key}` : key
-    if (typeof apiObj[key] === 'function') {
-      ipcMain.on(`on-api:${fullKey}`, (_event, ...args) => {
-        try {
-          ;(apiObj[key] as (...args: unknown[]) => Promise<T>)(...args)
-        } catch (err) {
-          console.error(`[ERROR] IPC Listener error: ${fullKey}`, err)
-        }
-      })
-    } else {
-      registerAPIListeners(apiObj[key] as APIRecord<T>, fullKey)
-    }
-  }
-}
-
-/**
- * API のエミッターを作成する
- * @param apiObj API のリスナー郡
- * @param parentKey 親のキー
- * @returns API のエミッター
- */
-const createAPIEmitter = <T>(apiObj: APIRecord<T>, parentKey = ''): RecursiveAPI<T> => {
-  const apiEmitter: Partial<RecursiveAPI<T>> = {}
-
-  for (const key in apiObj) {
-    const fullKey = parentKey ? `${parentKey}.${key}` : key
-    if (typeof apiObj[key] === 'function') {
-      apiEmitter[key] = (...args: unknown[]): void => {
-        ipcRenderer.send(`on-api:${fullKey}`, ...args)
-      }
-    } else {
-      apiEmitter[key] = createAPIEmitter(apiObj[key] as APIRecord<T>, fullKey)
-    }
-  }
-
-  return apiEmitter as RecursiveAPI<T>
-}
-
 type APIHandler = RecursiveAPI<typeof apiHandlers>
-type APIListeners = RecursiveAPI<typeof apiListeners>
 
-export {
-  apiHandlers,
-  registerAPIHandlers,
-  createAPIInvoker,
-  apiListeners,
-  registerAPIListeners,
-  createAPIEmitter,
-  type APIHandler,
-  type APIListeners
-}
+export { apiHandlers, registerAPIHandlers, createAPIInvoker, type APIHandler }

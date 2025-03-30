@@ -1,13 +1,9 @@
-import { app, shell, BrowserWindow } from 'electron'
+import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?raw'
-import {
-  apiHandlers,
-  registerAPIHandlers,
-  apiListeners,
-  registerAPIListeners
-} from '../preload/utils/api.js'
+import { DatabaseManager } from './utils/database.js'
+import { apiHandlers, registerAPIHandlers } from '../preload/utils/api/handler.js'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -17,7 +13,7 @@ function createWindow(): void {
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: join(__dirname, '../preload/index.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
@@ -53,6 +49,19 @@ function createWindow(): void {
   }
 }
 
+ipcMain.handle('database:initialize', async () => {
+  const db = DatabaseManager.getDB()
+  return new Promise((resolve, reject) => {
+    db.all('SELECT * FROM chats', (err, rows) => {
+      if (err) {
+        reject(err)
+      } else {
+        resolve(rows)
+      }
+    })
+  })
+})
+
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.electron')
 
@@ -61,9 +70,7 @@ app.whenReady().then(() => {
   })
 
   createWindow()
-
   registerAPIHandlers(apiHandlers)
-  registerAPIListeners(apiListeners)
 
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

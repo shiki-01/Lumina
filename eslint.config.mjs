@@ -1,6 +1,7 @@
 import tseslint from '@electron-toolkit/eslint-config-ts'
 import eslintConfigPrettier from '@electron-toolkit/eslint-config-prettier'
 import eslintPluginSvelte from 'eslint-plugin-svelte'
+import css from '@master/eslint-config-css'
 
 export default tseslint.config(
   { ignores: ['**/node_modules', '**/dist', '**/out'] },
@@ -27,5 +28,6 @@ export default tseslint.config(
       ]
     }
   },
-  eslintConfigPrettier
+  eslintConfigPrettier,
+  css
 )

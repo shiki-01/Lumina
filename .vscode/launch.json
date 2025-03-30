@@ -2,6 +2,12 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "command": "bun run dev",
+      "name": "Run Main Process",
+      "request": "launch",
+      "type": "node-terminal"
+    },
+    {
       "name": "Debug Main Process",
       "type": "node",
       "request": "launch",

@@ -40,6 +40,7 @@
     "@master/css-runtime": "^2.0.0-rc.1",
     "@master/css-server": "^2.0.0-rc.61",
     "@master/css.svelte": "^2.0.0-rc.61",
+    "@master/eslint-config-css": "^2.0.0-beta.175",
     "@swc/core": "^1.11.13",
     "app-builder-bin": "^4.2.0",
     "dompurify": "^3.2.4",
