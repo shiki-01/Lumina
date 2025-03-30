@@ -139,20 +139,26 @@
   })
 </script>
 
-<div class="width:100% height:100%">
+<div class="w:100% h:100%">
   <div
-    class="scroll width:100% max-height:100% overflow-y:auto display:flex flex-direction:column gap:24px padding-x:240px padding-y:64px"
+    class="scroll w:100% max-h:100% overflow-y:auto flex rel flex:column gap:24px px:120px py:64px"
   >
+  <div class="fixed px:120px py:24px top:0 left:0 w:100% h:100% z:10 flex flex:column justify-content:space-between pointer-events:none">
+    <span class="w:100% h:64px bg:#fff"></span>
+    <span class="w:100% h:64px bg:linear-gradient(to|bottom,rgba(255,255,255,0),#fff|60%)"></span>
+  </div>
     {#if messages}
       {#each Object.entries(messages) as [index, message] (index)}
-        <div class="width:100% display:flex flex-direction:column gap:12px padding-bottom:120px">
-          <div class="width:100% display:flex gap:12px">
+        <div class="w:100% flex rel flex:column gap:12px pb:120px">
+          <div class="w:100% sticky top:0 flex flex:column bg:linear-gradient(to|bottom,#fff|60%,rgba(255,255,255,0)) z:1">
             {message.user}
+            <span class="w:100% h:2px mt:24px mb:32px bg:#eee"></span>
           </div>
-          <span class="width:100% height:2px background:#eee"></span>
-          <div class="width:100% display:flex gap:12px">
-            <Lumina />
-            <div class="markdown width:100% display:flex flex-direction:column">
+          <div class="w:100% flex gap:12px rel px:40px">
+            <div class="abs top:0 left:0">
+              <Lumina />
+            </div>
+            <div class="markdown w:100% px:12px pt:8px flex flex:column">
               <SvelteMarkdown source={message.assistant} />
             </div>
           </div>
@@ -161,42 +167,41 @@
     {/if}
   </div>
   <div
-    class="width:calc(100%-48px) height:{areaHeight}px position:absolute bottom:12px left:0 margin:24px display:flex justify-content:center gap:12px"
+    class="w:calc(100%-48px) h:{areaHeight}px abs z:50 bottom:12px left:0 m:24px flex justify-content:center gap:12px"
   >
     <div
-      class="width:740px height:calc({areaHeight}px+20px) filter:blur(15px) position:absolute z:0 top:50% left:50% transform:translate(-50%,-50%) bg:rgba(209,26,29,0.315) border-radius:26px overflow:hidden"
+      class="w:740px h:calc({areaHeight}px+20px) blur(15px) abs z:0 top:50% left:50% translate(-50%,-50%) bg:rgba(209,26,29,0.315) r:26px overflow:hidden"
     >
       <div
-        class="width:calc({areaHeight}px+800) square position:absolute top:-400px left:-20px gradient"
+        class="w:calc({areaHeight}px+800) square abs top:-400px left:-20px gradient"
       ></div>
     </div>
     <div
-      class="width:720px height:100% padding:16px position:relative display:flex flex-direction:column gap:4px border-radius:16px bg:#fff"
+      class="w:720px h:100% padding:16px rel flex flex:column gap:4px r:16px bg:#fff"
     >
       <textarea
-        class="scroll width:100% min-height:56px outline:none:focus resize:none bg:#fff"
+        class="scroll w:100% min-h:56px outline:none:focus resize:none bg:#fff"
         oninput={calcAreaHeight}
         bind:this={textArea}
       ></textarea>
-      <div class="width:100% height:36px"></div>
+      <div class="w:100% h:36px"></div>
       <button
-        class="send width:36px height:36px position:absolute bottom:12px right:12px display:flex overflow:hidden border-radius:50% bg:#06c8ef bg:#34ddff:active fg:#fff shadow:0|2px|10px|#06c8ef98 shadow:0|4px|16px|rgb(6,200,239):hover transition:box-shadow|120ms|ease-in cursor:pointer"
+        class="send w:36px h:36px abs bottom:12px right:12px flex overflow:hidden r:50% bg:#06c8ef bg:#34ddff:active fg:#fff shadow:0|2px|10px|#06c8ef98 shadow:0|4px|16px|rgb(6,200,239):hover box-shadow|120ms|ease-in cursor:pointer"
         onclick={send}
       >
-        <div class="width:100% height:100% display:flex position:relative">
+        <div class="w:100% h:100% flex rel">
           {#each Array(gradients) as _, index (index)}
             <div
               bind:this={elements[index]}
-              class="element width:36px height:36px position:absolute top:0 left:0 z:0 border-radius:50%"
-              style={`--element-x-${index}: ${random()}; --element-y-${index}: ${random()}; transform:translate(var(--element-x-${index}), var(--element-y-${index}));`}
+              class="element w:36px h:36px abs top:0 left:0 z:0 r:50% translate({random}%, {random}%)"
             ></div>
           {/each}
           <div
             data-loading={loading}
-            class="loading width:36px height:36px display:flex align-items:center justify-content:center position:relative"
+            class="loading w:36px h:36px flex align-items:center justify-content:center rel"
           >
             <Icon
-              class="position:absolute top:50% left:50% translate(-50%,-50%) z:1 width:20px height:20px"
+              class="abs top:50% left:50% translate(-50%,-50%) z:1 w:20px h:20px"
               icon={loading ? 'mdi:loading' : 'mdi:send'}
             />
           </div>

@@ -63,16 +63,12 @@
   })
 </script>
 
-<div class="lumina-svg width:48px height:48px display:flex padding-top:1rem">
+<div class="lumina-svg w:40px h:40px flex ~display|0.3s|ease-in-out">
   <!-- eslint-disable-next-line -->
   {@html modifiedLumina}
 </div>
 
 <style>
-  .lumina-svg {
-    transition: display 0.3s ease-in-out;
-  }
-
   .lumina-svg :global(svg) {
     width: 100%;
     height: 100%;

@@ -17,11 +17,6 @@
   let isContextMenuOpen = $state(false)
   let chats: ChatTable[] = $state([])
 
-  const styleVariable = {
-    mainPadding: 24,
-    headerHeight: 48
-  }
-
   const updateChatList = async (): Promise<void> => {
     if (typeof window !== 'undefined') {
       const { data } = await window.api.invoke.chats.list()
@@ -98,18 +93,16 @@
 </script>
 
 <CSSRuntimeProvider config>
-  <div class="width:100svw height:100svh overflow:hidden">
+  <div class="w:100svw h:100svh overflow:hidden">
     <Router>
-      <div
-        class={`width:100% height:100% overflow:hidden position:relative padding:${styleVariable.mainPadding}px`}
-      >
+      <div class="w:100% h:100% overflow:hidden rel p:24px">
         <Route path="/chat/:id" let:params>
           <Chat id={params.id} />
         </Route>
         <Route path="/">
           {#if isContextMenuOpen}
             <button
-              class="position:absolute top:0 right:0 width:100% height:100%"
+              class="abs top:0 right:0 w:100% h:100%"
               onclick={(): boolean => (isContextMenuOpen = false)}
             >
               <ContextMenu context={contextMenu} position={contextPosition} />
@@ -117,22 +110,22 @@
           {/if}
           <button
             onclick={newChat}
-            class="position:absolute bottom:0 right:0 margin:24px padding:12px border-radius:100px cursor:pointer fg:#fff bg:#000 shadow:0|2px|4px|rgba(0,0,0,0.2) shadow:0|4px|8px|rgba(0,0,0,0.2):hover ~box-shadow|ease-in ~duration:120ms"
+            class="abs bottom:0 right:0 m:24px p:12px r:100px cursor:pointer fg:#fff bg:#000 shadow:0|2px|4px|rgba(0,0,0,0.2) shadow:0|4px|8px|rgba(0,0,0,0.2):hover ~box-shadow|ease-in ~duration:120ms"
           >
-            <Icon icon="mdi:plus" class="width:24px height:24px" />
+            <Icon icon="mdi:plus" class="w:24px h:24px" />
           </button>
           <div
             data-isOverflow={isOverflow}
-            class="scroll width:100% height:100% flex flex:column overflow-y:auto gap:16px"
+            class="scroll w:100% h:100% flex flex:column overflow-y:auto gap:16px"
           >
             {#each chats as chat, index (index)}
               <Link to="/chat/{chat.id}">
                 <button
                   oncontextmenu={(e): void => ListContextMenu(e, chat.id)}
-                  class="w:calc(100%-16px) margin:8px padding:16px display:flex flex-direction:column gap:8px border-radius:8px cursor:pointer border:2px|solid|#06c8ef49 border:2px|solid|#06c8ef:hover ~border|ease-in ~duration:120ms"
+                  class="w:calc(100%-16px) m:8px p:16px flex flex:column gap:8px r:8px cursor:pointer border:2px|solid|#06c8ef49 border:2px|solid|#06c8ef:hover ~border|ease-in ~duration:120ms"
                 >
                   <h1 class="font-weight:400 font-size:1.5em text:left">タイトル{chat.title}</h1>
-                  <div class="width:100% flex flex:row justify-content:space-between">
+                  <div class="w:100% flex flex:row justify-content:space-between">
                     <p>{chat.created_at}</p>
                     <p>{chat.model}</p>
                   </div>
