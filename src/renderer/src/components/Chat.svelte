@@ -143,28 +143,30 @@
   <div
     class="scroll w:100% max-h:100% overflow-y:auto flex rel flex:column gap:24px px:120px py:64px"
   >
-  <div class="fixed px:120px py:24px top:0 left:0 w:100% h:100% z:10 flex flex:column justify-content:space-between pointer-events:none">
-    <span class="w:100% h:64px bg:#fff"></span>
-    <span class="w:100% h:64px bg:linear-gradient(to|bottom,rgba(255,255,255,0),#fff|60%)"></span>
-  </div>
-    {#if messages}
-      {#each Object.entries(messages) as [index, message] (index)}
-        <div class="w:100% flex rel flex:column gap:12px pb:120px">
-          <div class="w:100% sticky top:0 flex flex:column bg:linear-gradient(to|bottom,#fff|60%,rgba(255,255,255,0)) z:1">
-            {message.user}
-            <span class="w:100% h:2px mt:24px mb:32px bg:#eee"></span>
+    <div
+      class="fixed px:120px py:24px top:0 left:0 w:100% h:100% z:10 flex flex:column justify-content:space-between pointer-events:none"
+    >
+      <span class="w:100% h:64px bg:#fff"></span>
+      <span class="w:100% h:64px bg:linear-gradient(to|bottom,rgba(255,255,255,0),#fff|60%)"></span>
+    </div>
+    {#each Object.entries(messages) as [index, message] (index)}
+      <div class="w:100% flex rel flex:column gap:12px pb:120px">
+        <div
+          class="w:100% sticky top:0 flex flex:column bg:linear-gradient(to|bottom,#fff|60%,rgba(255,255,255,0)) z:1"
+        >
+          {message.user}
+          <span class="w:100% h:2px mt:24px mb:32px bg:#eee"></span>
+        </div>
+        <div class="w:100% flex gap:12px rel px:40px">
+          <div class="abs top:0 left:0">
+            <Lumina />
           </div>
-          <div class="w:100% flex gap:12px rel px:40px">
-            <div class="abs top:0 left:0">
-              <Lumina />
-            </div>
-            <div class="markdown w:100% px:12px pt:8px flex flex:column">
-              <SvelteMarkdown source={message.assistant} />
-            </div>
+          <div class="markdown w:100% px:12px pt:8px flex flex:column">
+            <SvelteMarkdown source={message.assistant} />
           </div>
         </div>
-      {/each}
-    {/if}
+      </div>
+    {/each}
   </div>
   <div
     class="w:calc(100%-48px) h:{areaHeight}px abs z:50 bottom:12px left:0 m:24px flex justify-content:center gap:12px"
@@ -172,13 +174,9 @@
     <div
       class="w:740px h:calc({areaHeight}px+20px) blur(15px) abs z:0 top:50% left:50% translate(-50%,-50%) bg:rgba(209,26,29,0.315) r:26px overflow:hidden"
     >
-      <div
-        class="w:calc({areaHeight}px+800) square abs top:-400px left:-20px gradient"
-      ></div>
+      <div class="w:calc({areaHeight}px+800) square abs top:-400px left:-20px gradient"></div>
     </div>
-    <div
-      class="w:720px h:100% padding:16px rel flex flex:column gap:4px r:16px bg:#fff"
-    >
+    <div class="w:720px h:100% padding:16px rel flex flex:column gap:4px r:16px bg:#fff">
       <textarea
         class="scroll w:100% min-h:56px outline:none:focus resize:none bg:#fff"
         oninput={calcAreaHeight}

@@ -1,7 +1,7 @@
-import { ipcMain, ipcRenderer } from 'electron'
+import { ipcMain, ipcRenderer, WebContents } from 'electron'
 import { ipcManager } from './ipcManager.js'
 import { logStatus } from '../logStatus.js'
-import type { APISchema, APIRecord, RecursiveAPI } from '../../types/index.js'
+import type { APISchema, APIRecord, RecursiveListener } from '../../types/index.js'
 
 const apiListeners = {
   stream: {
@@ -25,6 +25,7 @@ const apiListeners = {
       })
     },
     onDatabaseChange: (
+      _sender: WebContents,
       callback: (args: {
         name: 'message' | 'chat'
         type: 'insert' | 'update' | 'delete'
@@ -80,8 +81,8 @@ const registerAPIListeners = <T>(apiObj: APIRecord<T>, parentKey = ''): void => 
  * @param parentKey 親のキー
  * @returns API のエミッター
  */
-const createAPIEmitter = <T>(apiObj: APIRecord<T>, parentKey = ''): RecursiveAPI<T> => {
-  const apiEmitter: Partial<RecursiveAPI<T>> = {}
+const createAPIEmitter = <T>(apiObj: APIRecord<T>, parentKey = ''): RecursiveListener<T> => {
+  const apiEmitter: Partial<RecursiveListener<T>> = {}
 
   for (const key in apiObj) {
     const fullKey = parentKey ? `${parentKey}.${key}` : key
@@ -94,9 +95,9 @@ const createAPIEmitter = <T>(apiObj: APIRecord<T>, parentKey = ''): RecursiveAPI
     }
   }
 
-  return apiEmitter as RecursiveAPI<T>
+  return apiEmitter as RecursiveListener<T>
 }
 
-type APIListeners = RecursiveAPI<typeof apiListeners>
+type APIListeners = RecursiveListener<typeof apiListeners>
 
 export { apiListeners, registerAPIListeners, createAPIEmitter, type APIListeners }

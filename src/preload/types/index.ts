@@ -1,3 +1,5 @@
+import { WebContents } from "electron"
+
 /**
  * API のレスポンスのスキーマ
  * @template T API のレスポンスのデータの型
@@ -26,9 +28,16 @@ type AsyncFunction = (...args: any[]) => Promise<any>
 
 type RecursiveAPI<T> = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [K in keyof T]: T[K] extends (...args: any[]) => any
-    ? (...args: Parameters<T[K]>) => ReturnType<T[K]>
+  [K in keyof T]: T[K] extends (R: WebContents, ...args: infer P) => infer R
+    ? (...args: P) => R
     : RecursiveAPI<T[K]>
 }
 
-export type { APIRecord, Status, APISchema, AsyncFunction, RecursiveAPI }
+type RecursiveListener<T> = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [K in keyof T]: T[K] extends (...args: any[]) => any
+    ? (...args: Parameters<T[K]>) => ReturnType<T[K]>
+    : RecursiveListener<T[K]>
+}
+
+export type { APIRecord, Status, APISchema, AsyncFunction, RecursiveAPI, RecursiveListener }

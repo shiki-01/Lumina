@@ -1,4 +1,4 @@
-import { ipcMain, ipcRenderer } from 'electron'
+import { ipcMain, ipcRenderer, WebContents } from 'electron'
 import { AbortableAsyncIterator, ChatResponse, Ollama } from 'ollama'
 import { APIRecord, APISchema, RecursiveAPI } from '../../types/index.js'
 import { ChatTable, MessageTable } from '../../../global.js'
@@ -13,7 +13,7 @@ import { DatabaseManager } from '../../../main/utils/database.js'
  */
 const apiHandlers = {
   chats: {
-    list: async (): Promise<APISchema<ChatTable[] | null>> => {
+    list: async (_sender: WebContents): Promise<APISchema<ChatTable[] | null>> => {
       try {
         const db = DatabaseManager.getDB()
         const rows: ChatTable[] = await new Promise((resolve, reject) => {
@@ -34,7 +34,7 @@ const apiHandlers = {
       }
     },
 
-    create: async (): Promise<APISchema<{ id: string } | null>> => {
+    create: async (_sender: WebContents): Promise<APISchema<{ id: string } | null>> => {
       try {
         const db = DatabaseManager.getDB()
         let id: string
@@ -70,7 +70,7 @@ const apiHandlers = {
       }
     },
 
-    delete: async (id: string): Promise<APISchema> => {
+    delete: async (_sender: WebContents, id: string): Promise<APISchema> => {
       try {
         const db = DatabaseManager.getDB()
         await new Promise((resolve, reject) => {
@@ -86,7 +86,7 @@ const apiHandlers = {
   },
 
   messages: {
-    getHistory: async (chatId: string): Promise<APISchema<MessageTable[] | null>> => {
+    getHistory: async (_sender: WebContents, chatId: string): Promise<APISchema<MessageTable[] | null>> => {
       try {
         const db = DatabaseManager.getDB()
         const rows = await new Promise((resolve, reject) => {
@@ -98,6 +98,7 @@ const apiHandlers = {
             (err, rows) => (err ? reject(err) : resolve(rows))
           )
         })
+        console.log('getHistory', rows)
         if (!rows) {
           return logStatus({ code: 404, message: 'メッセージの履歴が見つかりませんでした' })
         } else {
@@ -115,7 +116,7 @@ const apiHandlers = {
       }
     },
 
-    append: async (content: MessageTable): Promise<APISchema> => {
+    append: async (_sender: WebContents, content: MessageTable): Promise<APISchema> => {
       try {
         const db = DatabaseManager.getDB()
         const id = uuid()
@@ -126,6 +127,7 @@ const apiHandlers = {
             (err) => (err ? reject(err) : resolve(null))
           )
         })
+        console.log('append', content)
         return logStatus({ code: 200, message: 'メッセージを追加しました' })
       } catch (error) {
         return logStatus({ code: 500, message: 'メッセージの追加に失敗しました' }, {}, error)
@@ -134,10 +136,10 @@ const apiHandlers = {
   },
 
   ollama: {
-    generate: async (chatId: string, prompt: string): Promise<APISchema> => {
+    generate: async (sender: WebContents, chatId: string, prompt: string): Promise<APISchema> => {
       try {
         if (chatId === 'tmp') {
-          chatId = (await apiHandlers.chats.create()).data?.id as string
+          chatId = (await apiHandlers.chats.create(sender)).data?.id as string
         }
         const db = DatabaseManager.getDB()
         const chat = await new Promise((resolve, reject) => {
@@ -151,7 +153,7 @@ const apiHandlers = {
 
         let response: ChatResponse | AbortableAsyncIterator<ChatResponse>
 
-        if (process.env.NODE_ENV === 'development') {
+        if (process.env.NODE_ENV !== 'development') {
           response = {
             model: 'gemma3:1b',
             created_at: new Date(),
@@ -210,14 +212,15 @@ const apiHandlers = {
               messageId,
               chatId
             }
-            ipcMain.emit('stream:response', serializableChunk)
+            sender.send('stream:response', serializableChunk)
             if (chunk.done) {
-              apiHandlers.messages.append({
+              console.log('done', chunk)
+              apiHandlers.messages.append(sender, {
                 id: messageId,
                 chat_id: chatId,
                 user: prompt,
                 assistant: chunk.message.content,
-                created_at: chunk.created_at.toISOString()
+                created_at: new Date(chunk.created_at).toISOString()
               })
               break
             }
@@ -232,7 +235,7 @@ const apiHandlers = {
             messageId,
             chatId
           }
-          apiHandlers.messages.append({
+          apiHandlers.messages.append(sender, {
             id: messageId,
             chat_id: chatId,
             user: prompt,
@@ -263,9 +266,9 @@ const registerAPIHandlers = <T>(apiObj: APIRecord<T>, parentKey = ''): void => {
   for (const key in apiObj) {
     const fullKey = parentKey ? `${parentKey}.${key}` : key
     if (typeof apiObj[key] === 'function') {
-      ipcMain.handle(`invoke-api:${fullKey}`, async (_event, ...args) => {
+      ipcMain.handle(`invoke-api:${fullKey}`, async (event, ...args) => {
         try {
-          return await (apiObj[key] as (...args: unknown[]) => Promise<T>)(...args)
+          return await (apiObj[key] as (...args: unknown[]) => Promise<T>)(event.sender, ...args)
         } catch (err) {
           return logStatus({ code: 500, message: 'API の呼び出しに失敗しました' }, null, err)
         }
